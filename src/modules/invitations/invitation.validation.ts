@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const createInvitationSchema = z.object({
   user_id: z.number(),
-  template_key: z.string().default("template-a"),
+  template_key: z.string().default("luxury"),
   slug: z.string().min(3),
   event_type: z.string().optional(),
   title: z.string().optional(),

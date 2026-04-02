@@ -1,36 +1,54 @@
 import db from "../../config/db";
 
 export const InvitationRepository = {
-  async findAll() {
-    return db("invitations").select("*").orderBy("id", "desc");
+  async create(data: any) {
+    const [invitation] = await db("invitations").insert(data).returning("*");
+    return invitation;
   },
 
-  async findBySlug(slug: string) {
-    return db("invitations").where({ slug }).first();
+  async findAll() {
+    return db("invitations").orderBy("id", "desc");
+  },
+
+  async findAllByUserId(userId: number) {
+    return db("invitations").where({ user_id: userId }).orderBy("id", "desc");
   },
 
   async findById(id: number) {
     return db("invitations").where({ id }).first();
   },
 
-  async create(data: any) {
-    const [invitation] = await db("invitations").insert(data).returning("*");
-    return invitation;
+  async findByIdAndUserId(id: number, userId: number) {
+    return db("invitations").where({ id, user_id: userId }).first();
   },
 
-  async update(id: number, data: any) {
+  async updateById(id: number, data: any) {
     const [updated] = await db("invitations")
       .where({ id })
-      .update({
-        ...data,
-        updated_at: db.fn.now(),
-      })
+      .update(data)
       .returning("*");
 
     return updated;
   },
 
-  async delete(id: number) {
+  async updateByIdAndUserId(id: number, userId: number, data: any) {
+    const [updated] = await db("invitations")
+      .where({ id, user_id: userId })
+      .update(data)
+      .returning("*");
+
+    return updated;
+  },
+
+  async deleteById(id: number) {
     return db("invitations").where({ id }).del();
+  },
+
+  async deleteByIdAndUserId(id: number, userId: number) {
+    return db("invitations").where({ id, user_id: userId }).del();
+  },
+
+  async findBySlug(slug: string) {
+    return db("invitations").where({ slug, is_published: true }).first();
   },
 };

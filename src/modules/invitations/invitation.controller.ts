@@ -1,116 +1,159 @@
 import { Request, Response } from "express";
-import { InvitationService } from "./invitation.service";
+import { InvitationRepository } from "./invitation.repository";
+import { AuthRequest } from "../../middlewares/auth.middleware";
+
+const isAdminRole = (role?: string) => {
+  return role === "admin" || role === "superadmin";
+};
 
 export const InvitationController = {
-  async getAll(req: Request, res: Response) {
+  async create(req: AuthRequest, res: Response) {
     try {
-      const data = await InvitationService.getAll();
-      res.json({ success: true, data });
+      const userId = req.user!.id;
+
+      const invitation = await InvitationRepository.create({
+        ...req.body,
+        user_id: userId,
+      });
+
+      return res.status(201).json({
+        success: true,
+        data: invitation,
+      });
     } catch (error) {
       console.error(error);
-      res.status(500).json({ success: false, message: "Failed to fetch invitations" });
+      return res.status(500).json({
+        success: false,
+        message: "Failed to create invitation",
+      });
     }
   },
 
-  async getBySlug(req: Request, res: Response) {
+  async getAll(req: AuthRequest, res: Response) {
+    try {
+      const user = req.user!;
+
+      const invitations = isAdminRole(user.role)
+        ? await InvitationRepository.findAll()
+        : await InvitationRepository.findAllByUserId(user.id);
+
+      return res.status(200).json({
+        success: true,
+        data: invitations,
+      });
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        message: "Failed to fetch invitations",
+      });
+    }
+  },
+
+  async getById(req: AuthRequest, res: Response) {
+    try {
+      const user = req.user!;
+      const id = Number(req.params.id);
+
+      const invitation = isAdminRole(user.role)
+        ? await InvitationRepository.findById(id)
+        : await InvitationRepository.findByIdAndUserId(id, user.id);
+
+      if (!invitation) {
+        return res.status(404).json({
+          success: false,
+          message: "Invitation not found",
+        });
+      }
+
+      return res.status(200).json({
+        success: true,
+        data: invitation,
+      });
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        message: "Failed to fetch invitation",
+      });
+    }
+  },
+
+  async update(req: AuthRequest, res: Response) {
+    try {
+      const user = req.user!;
+      const id = Number(req.params.id);
+
+      const updated = isAdminRole(user.role)
+        ? await InvitationRepository.updateById(id, req.body)
+        : await InvitationRepository.updateByIdAndUserId(id, user.id, req.body);
+
+      if (!updated) {
+        return res.status(404).json({
+          success: false,
+          message: "Invitation not found",
+        });
+      }
+
+      return res.status(200).json({
+        success: true,
+        data: updated,
+      });
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        message: "Failed to update invitation",
+      });
+    }
+  },
+
+  async delete(req: AuthRequest, res: Response) {
+    try {
+      const user = req.user!;
+      const id = Number(req.params.id);
+
+      const deleted = isAdminRole(user.role)
+        ? await InvitationRepository.deleteById(id)
+        : await InvitationRepository.deleteByIdAndUserId(id, user.id);
+
+      if (!deleted) {
+        return res.status(404).json({
+          success: false,
+          message: "Invitation not found",
+        });
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: "Invitation deleted",
+      });
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        message: "Failed to delete invitation",
+      });
+    }
+  },
+
+  async getBySlugPublic(req: Request, res: Response) {
     try {
       const slug = req.params.slug.toString();
-      const data = await InvitationService.getBySlug(slug);
+      const invitation = await InvitationRepository.findBySlug(slug);
 
-      if (!data) {
-        return res.status(404).json({ success: false, message: "Invitation not found" });
-      }
-
-      res.json({ success: true, data });
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ success: false, message: "Failed to fetch invitation" });
-    }
-  },
-
-  async getById(req: Request, res: Response) {
-    try {
-        const { id } = req.params;
-        const data = await InvitationService.getById(Number(id));
-
-        if (!data) {
+      if (!invitation) {
         return res.status(404).json({
-            success: false,
-            message: "Invitation not found",
+          success: false,
+          message: "Invitation not found",
         });
-        }
+      }
 
-        res.json({ success: true, data });
+      return res.status(200).json({
+        success: true,
+        data: invitation,
+      });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({
+      return res.status(500).json({
         success: false,
-        message: "Failed to fetch invitation by id",
-        });
-    }
-    },
-
-  async create(req: Request, res: Response) {
-    try {
-      const data = await InvitationService.create(req.body);
-      res.status(201).json({ success: true, data });
-    } catch (error: any) {
-      console.error(error);
-
-      if (error.code === "ER_DUP_ENTRY") {
-        return res.status(400).json({
-          success: false,
-          message: "Slug already exists",
-        });
-      }
-
-      res.status(500).json({ success: false, message: "Failed to create invitation" });
+        message: "Failed to fetch invitation",
+      });
     }
   },
-
-  async update(req: Request, res: Response) {
-    try {
-      const { id } = req.params;
-
-      const existing = await InvitationService.getById(Number(id));
-      if (!existing) {
-        return res.status(404).json({ success: false, message: "Invitation not found" });
-      }
-
-      const data = await InvitationService.update(Number(id), req.body);
-      res.json({ success: true, data });
-    } catch (error: any) {
-      console.error(error);
-
-      if (error.code === "ER_DUP_ENTRY") {
-        return res.status(400).json({
-          success: false,
-          message: "Slug already exists",
-        });
-      }
-
-      res.status(500).json({ success: false, message: "Failed to update invitation" });
-    }
-  },
-
-  async delete(req: Request, res: Response) {
-  try {
-    const { id } = req.params;
-
-    const existing = await InvitationService.getById(Number(id));
-    if (!existing) {
-      return res.status(404).json({ success: false, message: "Invitation not found" });
-    }
-
-    await InvitationService.delete(Number(id));
-
-    res.json({
-      success: true,
-      message: "Invitation deleted successfully",
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false, message: "Failed to delete invitation" });
-  }
-}
 };
