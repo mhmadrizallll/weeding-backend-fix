@@ -7,24 +7,87 @@ const isAdminRole = (role?: string) => {
 };
 
 export const InvitationController = {
-  async create(req: AuthRequest, res: Response) {
+  async create(req: Request, res: Response) {
     try {
-      const userId = req.user!.id;
+      const {
+        user_id,
+        template_key,
+        slug,
+        event_type,
+        title,
+        groom_name,
+        bride_name,
+        cover_title,
+        cover_subtitle,
+        quote,
+        story,
+        music_url,
+        location_name,
+        location_address,
+        google_maps_url,
+        event_date,
+        event_time,
+        is_published,
+        cover_image,
+        gallery_images,
+      } = req.body;
 
-      const invitation = await InvitationRepository.create({
-        ...req.body,
-        user_id: userId,
+      if (!user_id) {
+        return res.status(400).json({
+          success: false,
+          message: "User pemilik invitation wajib dipilih",
+        });
+      }
+
+      if (!slug) {
+        return res.status(400).json({
+          success: false,
+          message: "Slug wajib diisi",
+        });
+      }
+
+      const existingSlug = await InvitationRepository.findBySlugAny(slug);
+      if (existingSlug) {
+        return res.status(400).json({
+          success: false,
+          message: "Slug sudah digunakan, silakan pakai slug lain",
+        });
+      }
+
+      const created = await InvitationRepository.create({
+        user_id,
+        template_key,
+        slug,
+        event_type,
+        title,
+        groom_name,
+        bride_name,
+        cover_title,
+        cover_subtitle,
+        quote,
+        story,
+        music_url,
+        location_name,
+        location_address,
+        google_maps_url,
+        event_date,
+        event_time,
+        is_published,
+        cover_image,
+        gallery_images,
       });
 
       return res.status(201).json({
         success: true,
-        data: invitation,
+        message: "Invitation created successfully",
+        data: created,
       });
-    } catch (error) {
-      console.error(error);
+    } catch (error: any) {
+      console.error("CREATE INVITATION ERROR:", error);
+
       return res.status(500).json({
         success: false,
-        message: "Failed to create invitation",
+        message: error.message || "Failed to create invitation",
       });
     }
   },
@@ -41,10 +104,12 @@ export const InvitationController = {
         success: true,
         data: invitations,
       });
-    } catch (error) {
+    } catch (error: any) {
+      console.error("GET ALL INVITATIONS ERROR:", error);
+
       return res.status(500).json({
         success: false,
-        message: "Failed to fetch invitations",
+        message: error.message || "Failed to fetch invitations",
       });
     }
   },
@@ -69,10 +134,12 @@ export const InvitationController = {
         success: true,
         data: invitation,
       });
-    } catch (error) {
+    } catch (error: any) {
+      console.error("GET INVITATION BY ID ERROR:", error);
+
       return res.status(500).json({
         success: false,
-        message: "Failed to fetch invitation",
+        message: error.message || "Failed to fetch invitation",
       });
     }
   },
@@ -81,6 +148,37 @@ export const InvitationController = {
     try {
       const user = req.user!;
       const id = Number(req.params.id);
+
+      console.log("UPDATE ID:", id);
+      console.log("UPDATE BODY:", req.body);
+      console.log("UPDATE USER:", user);
+
+      const {
+        user_id,
+        slug,
+      } = req.body;
+
+      if (!user_id) {
+        return res.status(400).json({
+          success: false,
+          message: "User pemilik invitation wajib dipilih",
+        });
+      }
+
+      if (!slug) {
+        return res.status(400).json({
+          success: false,
+          message: "Slug wajib diisi",
+        });
+      }
+
+      const existingSlug = await InvitationRepository.findBySlugAny(slug);
+      if (existingSlug && Number(existingSlug.id) !== id) {
+        return res.status(400).json({
+          success: false,
+          message: "Slug sudah digunakan, silakan pakai slug lain",
+        });
+      }
 
       const updated = isAdminRole(user.role)
         ? await InvitationRepository.updateById(id, req.body)
@@ -97,10 +195,12 @@ export const InvitationController = {
         success: true,
         data: updated,
       });
-    } catch (error) {
+    } catch (error: any) {
+      console.error("UPDATE INVITATION ERROR:", error);
+
       return res.status(500).json({
         success: false,
-        message: "Failed to update invitation",
+        message: error.message || "Failed to update invitation",
       });
     }
   },
@@ -125,10 +225,12 @@ export const InvitationController = {
         success: true,
         message: "Invitation deleted",
       });
-    } catch (error) {
+    } catch (error: any) {
+      console.error("DELETE INVITATION ERROR:", error);
+
       return res.status(500).json({
         success: false,
-        message: "Failed to delete invitation",
+        message: error.message || "Failed to delete invitation",
       });
     }
   },
@@ -149,10 +251,12 @@ export const InvitationController = {
         success: true,
         data: invitation,
       });
-    } catch (error) {
+    } catch (error: any) {
+      console.error("GET INVITATION BY SLUG ERROR:", error);
+
       return res.status(500).json({
         success: false,
-        message: "Failed to fetch invitation",
+        message: error.message || "Failed to fetch invitation",
       });
     }
   },

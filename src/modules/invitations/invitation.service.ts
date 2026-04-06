@@ -18,10 +18,10 @@ export const InvitationService = {
   },
 
   async update(id: number, data: any) {
-    return InvitationRepository.update(id, data);
+    return InvitationRepository.updateById(id, data);
   },
 
   async delete(id: number) {
-    return InvitationRepository.delete(id);
+    return InvitationRepository.deleteById(id);
   },
 };

@@ -13,9 +13,26 @@ router.get("/", authMiddleware, InvitationController.getAll);
 router.get("/:id", authMiddleware, InvitationController.getById);
 
 // ONLY ADMIN / SUPERADMIN
-router.post("/", authMiddleware, allowRoles("admin", "superadmin"), InvitationController.create);
-router.put("/:id", authMiddleware, allowRoles("admin", "superadmin"), InvitationController.update);
-router.delete("/:id", authMiddleware, allowRoles("admin", "superadmin"), InvitationController.delete);
+router.post(
+  "/",
+  authMiddleware,
+  allowRoles("admin", "superadmin"),
+  InvitationController.create
+);
+
+router.put(
+  "/:id",
+  authMiddleware,
+  allowRoles("admin", "superadmin"),
+  InvitationController.update
+);
+
+router.delete(
+  "/:id",
+  authMiddleware,
+  allowRoles("admin", "superadmin"),
+  InvitationController.delete
+);
 
 export default router;
 

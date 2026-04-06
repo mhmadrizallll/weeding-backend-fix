@@ -51,4 +51,8 @@ export const InvitationRepository = {
   async findBySlug(slug: string) {
     return db("invitations").where({ slug, is_published: true }).first();
   },
+
+  async findBySlugAny(slug: string) {
+    return db("invitations").where({ slug }).first();
+  },
 };
