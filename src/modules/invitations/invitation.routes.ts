@@ -17,21 +17,21 @@ router.post(
   "/",
   authMiddleware,
   allowRoles("admin", "superadmin"),
-  InvitationController.create
+  InvitationController.create,
 );
 
 router.put(
   "/:id",
   authMiddleware,
   allowRoles("admin", "superadmin"),
-  InvitationController.update
+  InvitationController.update,
 );
 
 router.delete(
   "/:id",
   authMiddleware,
   allowRoles("admin", "superadmin"),
-  InvitationController.delete
+  InvitationController.delete,
 );
 
 export default router;
@@ -42,4 +42,3 @@ export default router;
 // router.post("/", authMiddleware, InvitationController.create);
 // router.put("/:id", authMiddleware, InvitationController.update);
 // router.delete("/:id", authMiddleware, InvitationController.delete);
-

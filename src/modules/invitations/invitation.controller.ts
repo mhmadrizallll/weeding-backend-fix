@@ -17,10 +17,13 @@ export const InvitationController = {
         title,
         groom_name,
         bride_name,
+        groom_image, // ✅ NEW
+        bride_image, // ✅ NEW
         cover_title,
         cover_subtitle,
         quote,
         story,
+        story_images, // ✅ NEW (array)
         music_url,
         location_name,
         location_address,
@@ -50,7 +53,7 @@ export const InvitationController = {
       if (existingSlug) {
         return res.status(400).json({
           success: false,
-          message: "Slug sudah digunakan, silakan pakai slug lain",
+          message: "Slug sudah digunakan",
         });
       }
 
@@ -62,10 +65,13 @@ export const InvitationController = {
         title,
         groom_name,
         bride_name,
+        groom_image,
+        bride_image,
         cover_title,
         cover_subtitle,
         quote,
         story,
+        story_images,
         music_url,
         location_name,
         location_address,
@@ -79,15 +85,13 @@ export const InvitationController = {
 
       return res.status(201).json({
         success: true,
-        message: "Invitation created successfully",
         data: created,
       });
     } catch (error: any) {
-      console.error("CREATE INVITATION ERROR:", error);
-
+      console.error("CREATE ERROR:", error);
       return res.status(500).json({
         success: false,
-        message: error.message || "Failed to create invitation",
+        message: error.message,
       });
     }
   },
@@ -100,17 +104,9 @@ export const InvitationController = {
         ? await InvitationRepository.findAll()
         : await InvitationRepository.findAllByUserId(user.id);
 
-      return res.status(200).json({
-        success: true,
-        data: invitations,
-      });
+      return res.json({ success: true, data: invitations });
     } catch (error: any) {
-      console.error("GET ALL INVITATIONS ERROR:", error);
-
-      return res.status(500).json({
-        success: false,
-        message: error.message || "Failed to fetch invitations",
-      });
+      return res.status(500).json({ success: false, message: error.message });
     }
   },
 
@@ -124,23 +120,12 @@ export const InvitationController = {
         : await InvitationRepository.findByIdAndUserId(id, user.id);
 
       if (!invitation) {
-        return res.status(404).json({
-          success: false,
-          message: "Invitation not found",
-        });
+        return res.status(404).json({ success: false });
       }
 
-      return res.status(200).json({
-        success: true,
-        data: invitation,
-      });
+      return res.json({ success: true, data: invitation });
     } catch (error: any) {
-      console.error("GET INVITATION BY ID ERROR:", error);
-
-      return res.status(500).json({
-        success: false,
-        message: error.message || "Failed to fetch invitation",
-      });
+      return res.status(500).json({ success: false });
     }
   },
 
@@ -149,34 +134,17 @@ export const InvitationController = {
       const user = req.user!;
       const id = Number(req.params.id);
 
-      console.log("UPDATE ID:", id);
-      console.log("UPDATE BODY:", req.body);
-      console.log("UPDATE USER:", user);
+      const { slug, user_id } = req.body;
 
-      const {
-        user_id,
-        slug,
-      } = req.body;
-
-      if (!user_id) {
-        return res.status(400).json({
-          success: false,
-          message: "User pemilik invitation wajib dipilih",
-        });
-      }
-
-      if (!slug) {
-        return res.status(400).json({
-          success: false,
-          message: "Slug wajib diisi",
-        });
+      if (!user_id || !slug) {
+        return res.status(400).json({ success: false });
       }
 
       const existingSlug = await InvitationRepository.findBySlugAny(slug);
       if (existingSlug && Number(existingSlug.id) !== id) {
         return res.status(400).json({
           success: false,
-          message: "Slug sudah digunakan, silakan pakai slug lain",
+          message: "Slug sudah digunakan",
         });
       }
 
@@ -184,24 +152,9 @@ export const InvitationController = {
         ? await InvitationRepository.updateById(id, req.body)
         : await InvitationRepository.updateByIdAndUserId(id, user.id, req.body);
 
-      if (!updated) {
-        return res.status(404).json({
-          success: false,
-          message: "Invitation not found",
-        });
-      }
-
-      return res.status(200).json({
-        success: true,
-        data: updated,
-      });
+      return res.json({ success: true, data: updated });
     } catch (error: any) {
-      console.error("UPDATE INVITATION ERROR:", error);
-
-      return res.status(500).json({
-        success: false,
-        message: error.message || "Failed to update invitation",
-      });
+      return res.status(500).json({ success: false });
     }
   },
 
@@ -214,50 +167,25 @@ export const InvitationController = {
         ? await InvitationRepository.deleteById(id)
         : await InvitationRepository.deleteByIdAndUserId(id, user.id);
 
-      if (!deleted) {
-        return res.status(404).json({
-          success: false,
-          message: "Invitation not found",
-        });
-      }
-
-      return res.status(200).json({
-        success: true,
-        message: "Invitation deleted",
-      });
-    } catch (error: any) {
-      console.error("DELETE INVITATION ERROR:", error);
-
-      return res.status(500).json({
-        success: false,
-        message: error.message || "Failed to delete invitation",
-      });
+      return res.json({ success: true, data: deleted });
+    } catch {
+      return res.status(500).json({ success: false });
     }
   },
 
   async getBySlugPublic(req: Request, res: Response) {
     try {
       const slug = req.params.slug.toString();
+
       const invitation = await InvitationRepository.findBySlug(slug);
 
       if (!invitation) {
-        return res.status(404).json({
-          success: false,
-          message: "Invitation not found",
-        });
+        return res.status(404).json({ success: false });
       }
 
-      return res.status(200).json({
-        success: true,
-        data: invitation,
-      });
-    } catch (error: any) {
-      console.error("GET INVITATION BY SLUG ERROR:", error);
-
-      return res.status(500).json({
-        success: false,
-        message: error.message || "Failed to fetch invitation",
-      });
+      return res.json({ success: true, data: invitation });
+    } catch {
+      return res.status(500).json({ success: false });
     }
   },
 };
