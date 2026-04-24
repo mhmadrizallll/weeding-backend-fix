@@ -71,7 +71,10 @@ export const InvitationController = {
         cover_subtitle,
         quote,
         story,
-        story_images,
+
+        // 🔥 FIX DI SINI
+        story_images: JSON.stringify(story_images || []),
+
         music_url,
         location_name,
         location_address,
@@ -80,7 +83,9 @@ export const InvitationController = {
         event_time,
         is_published,
         cover_image,
-        gallery_images,
+
+        // 🔥 FIX DI SINI
+        gallery_images: JSON.stringify(gallery_images || []),
       });
 
       return res.status(201).json({
